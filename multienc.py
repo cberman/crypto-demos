@@ -30,3 +30,10 @@ def rsa_encrypt(pub, message):
 def rsa_decrypt(priv, ct):
     cipher = PKCS1_OAP.new(priv)
     return cipher.decrypt(ct)
+
+def multi_encrypt(keys, message):
+    session_key = Random.new().read(32)
+    ct = [aes_encrypt(session_key, message),]
+    for key in keys:
+        ct.append((key, rsa_encrypt(key, session_key),))
+    return ct

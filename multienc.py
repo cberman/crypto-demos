@@ -28,12 +28,27 @@ def rsa_encrypt(pub, message):
     return cipher.encrypt(message)
 
 def rsa_decrypt(priv, ct):
-    cipher = PKCS1_OAP.new(priv)
+    cipher = PKCS1_OAEP.new(priv)
     return cipher.decrypt(ct)
+
+def rsa_importKey(fn):
+    with open(fn) as f:
+        return RSA.importKey(f.read())
 
 def multi_encrypt(keys, message):
     session_key = Random.new().read(32)
     ct = [aes_encrypt(session_key, message),]
     for key in keys:
-        ct.append((key, rsa_encrypt(key, session_key),))
+        ct.append(rsa_encrypt(key, session_key))
     return ct
+
+def multi_decrypt(priv, ct):
+    for enc_key in ct[1:]:
+        try:
+            session_key = rsa_decrypt(priv, enc_key)
+        except ValueError:
+            continue
+        break
+    else:
+        raise ValueError
+    return aes_decrypt(session_key, ct[0])

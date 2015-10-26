@@ -35,11 +35,11 @@ def rsa_importKey(fn):
     with open(fn) as f:
         return RSA.importKey(f.read())
 
-def multi_encrypt(keys, message):
+def multi_encrypt(pubs, message):
     session_key = Random.new().read(32)
     ct = [aes_encrypt(session_key, message),]
-    for key in keys:
-        ct.append(rsa_encrypt(key, session_key))
+    for pub in pubs:
+        ct.append(rsa_encrypt(pub, session_key))
     return ct
 
 def multi_decrypt(priv, ct):
@@ -50,5 +50,18 @@ def multi_decrypt(priv, ct):
             continue
         break
     else:
-        raise ValueError
+        raise ValueError('Incorrect decryption.')
     return aes_decrypt(session_key, ct[0])
+
+def multi_add_parties(priv, pubs, ct):
+    for enc_key in ct[1:]:
+        try:
+            session_key = rsa_decrypt(priv, enc_key)
+        except ValueError:
+            continue
+        break
+    else:
+        raise ValueError('Incorrect decryption.')
+    for pub in pubs:
+        ct.append(rsa_encrypt(pub, session_key))
+    return ct
